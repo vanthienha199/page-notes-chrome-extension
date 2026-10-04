@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Page Notes (Sample)",
+  "version": "1.0.0",
+  "description": "Highlight text on any web page, attach a note, and find it again next visit. Sample build.",
+  "permissions": ["storage", "contextMenus", "activeTab"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_popup": "popup.html", "default_title": "Page Notes" },
+  "options_page": "options.html",
+  "icons": { "16": "icons/16.png", "48": "icons/48.png", "128": "icons/128.png" },
+  "content_scripts": [
+    { "matches": ["http://*/*", "https://*/*"], "js": ["shared.js", "content.js"], "run_at": "document_idle" }
+  ],
+  "commands": {
+    "toggle-sidebar": { "suggested_key": { "default": "Alt+N" }, "description": "Show or hide the notes sidebar" }
+  }
+}

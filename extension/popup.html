@@ -1,0 +1,23 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="ui.css">
+<style>
+  body { width: 360px; }
+  .top { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; }
+  .page { padding: 12px 16px 4px; }
+  .page .title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .items { padding: 4px 16px 8px; max-height: 300px; overflow: auto; }
+  .item { padding: 8px 0; border-bottom: 1px solid #f3f4f6; cursor: pointer; }
+  .item:last-child { border-bottom: 0; }
+  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px 16px; border-top: 1px solid #f1f5f9; }
+  .stats { display: flex; gap: 8px; padding: 0 16px 14px; }
+  .stat { flex: 1; background: #f9fafb; border-radius: 8px; padding: 8px; text-align: center; }
+  .stat b { display: block; font-size: 18px; }
+</style></head>
+<body>
+  <div class="top brand"><img src="icons/48.png" alt=""><h1>Page Notes<small>Highlight and note any page</small></h1><span class="badge">Sample</span></div>
+  <div class="page"><div class="title" id="title">This page</div><div class="muted" id="sub"></div></div>
+  <div class="items" id="items"></div>
+  <div class="stats"><div class="stat"><b id="sPage">0</b><span class="muted">on this page</span></div><div class="stat"><b id="sAll">0</b><span class="muted">all notes</span></div><div class="stat"><b id="sSites">0</b><span class="muted">pages</span></div></div>
+  <div class="actions"><button class="primary" id="side">Open sidebar</button><button class="ghost" id="opts">All notes</button></div>
+  <script src="shared.js"></script><script src="popup.js"></script>
+</body></html>
