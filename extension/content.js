@@ -122,6 +122,10 @@
     const range = sel.getRangeAt(0);
     const quote = sel.toString();
     if (!quote.trim()) return;
+    const frag = range.cloneContents();
+    frag.querySelectorAll("sup, .reference, .mw-ref").forEach((x) => x.remove());
+    frag.querySelectorAll("a").forEach((x) => { if (/^\s*\[?\d{1,3}\]?\s*$/.test(x.textContent)) x.remove(); });
+    const display = frag.textContent.replace(/\s+/g, " ").trim();
     const idx = buildIndex();
     const start = offsetOf(idx, range.startContainer, range.startOffset);
     const end = offsetOf(idx, range.endContainer, range.endOffset);
@@ -129,6 +133,7 @@
     const note = {
       id: Math.random().toString(36).slice(2, 10),
       quote: idx.text.slice(start, end),
+      display,
       prefix: idx.text.slice(Math.max(0, start - CONTEXT), start),
       suffix: idx.text.slice(end, end + CONTEXT),
       note: "",
@@ -171,40 +176,67 @@
   root.innerHTML = `
     <style>
       :host { all: initial; }
-      * { box-sizing: border-box; font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-      .tip { position: fixed; z-index: 2147483647; display: none; background: #111827; color: #fff;
-             border-radius: 8px; padding: 4px; box-shadow: 0 6px 20px rgba(0,0,0,.25); gap: 4px; }
-      .tip button { all: unset; cursor: pointer; font-size: 13px; padding: 6px 10px; border-radius: 6px; }
-      .tip button:hover { background: #374151; }
-      .side { position: fixed; top: 0; right: 0; height: 100vh; width: 340px; z-index: 2147483646;
-              background: #fff; border-left: 1px solid #e5e7eb; box-shadow: -8px 0 24px rgba(0,0,0,.08);
-              transform: translateX(100%); transition: transform .2s ease-out; display: flex; flex-direction: column; }
+      .t { --canvas:#15171B; --surface:#1E2126; --raised:#262A30; --line:#2F333A; --ink:#F3EFE7; --muted:#A7A39B; --faint:#77736C; --accent:#F2994A; --accent-ink:#1A1206; --danger:#E8806E; }
+      .t.light { --canvas:#F6F3EE; --surface:#FFFFFF; --raised:#F1EDE6; --line:#E4DED4; --ink:#1B1A17; --muted:#6E6A62; --faint:#9A958C; --accent:#D9782A; --accent-ink:#FFFFFF; --danger:#C2543F; }
+      * { box-sizing: border-box; font-family: "PN Plex", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+      .tip { position: fixed; z-index: 2147483647; display: none; background: var(--canvas); color: var(--ink);
+             border: 1px solid var(--line); border-radius: 10px; padding: 4px; gap: 2px;
+             box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.28); }
+      .tip button { all: unset; cursor: pointer; font-size: 13px; font-weight: 500; padding: 7px 12px; border-radius: 7px; display: flex; align-items: center; gap: 8px; }
+      .tip button:hover { background: var(--raised); }
+      .tip button i { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+      .side { position: fixed; top: 0; right: 0; height: 100vh; width: 360px; z-index: 2147483646;
+              background: var(--canvas); color: var(--ink); border-left: 1px solid var(--line);
+              box-shadow: -1px 0 0 rgba(0,0,0,.2), -24px 0 48px rgba(0,0,0,.22);
+              transform: translateX(100%); transition: transform .25s cubic-bezier(.2,.8,.2,1); display: flex; flex-direction: column; }
+      .side.left { right: auto; left: 0; border-left: 0; border-right: 1px solid var(--line); transform: translateX(-100%);
+                   box-shadow: 1px 0 0 rgba(0,0,0,.2), 24px 0 48px rgba(0,0,0,.22); }
       .side.open { transform: none; }
-      header { padding: 16px 16px 12px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; gap: 8px; }
-      header h2 { font-size: 15px; margin: 0; color: #111827; flex: 1; }
-      header .count { font-size: 12px; color: #6b7280; background: #f3f4f6; border-radius: 999px; padding: 2px 8px; }
-      header button { all: unset; cursor: pointer; color: #6b7280; font-size: 18px; padding: 0 4px; }
-      .list { overflow: auto; flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
-      .card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px; background: #fff; }
-      .card.focus { border-color: #6366f1; box-shadow: 0 0 0 3px #e0e7ff; }
-      .quote { font-size: 13px; color: #111827; line-height: 1.45; border-left: 4px solid; padding-left: 8px; cursor: pointer; }
-      textarea { width: 100%; margin-top: 8px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px;
-                 font-size: 13px; resize: vertical; min-height: 44px; color: #111827; }
-      .row { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
-      .dot { width: 14px; height: 14px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
-      .dot.on { border-color: #111827; }
-      .meta { font-size: 11px; color: #9ca3af; flex: 1; text-align: right; }
-      .del { all: unset; cursor: pointer; font-size: 12px; color: #ef4444; margin-left: 6px; }
-      .empty { color: #6b7280; font-size: 13px; text-align: center; margin-top: 40px; line-height: 1.6; }
-      footer { font-size: 11px; color: #9ca3af; padding: 10px 16px; border-top: 1px solid #f1f5f9; }
+      header { padding: 20px 20px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); }
+      header .logo { width: 28px; height: 28px; border-radius: 8px; }
+      header h2 { font-family: "PN Bricolage", "PN Plex", sans-serif; font-weight: 700; letter-spacing: -0.02em; font-size: 19px; margin: 0; flex: 1; }
+      header .count { font-family: "PN Mono", monospace; font-size: 11px; color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); border-radius: 999px; padding: 2px 9px; }
+      header button { all: unset; cursor: pointer; color: var(--muted); font-size: 20px; line-height: 1; padding: 2px 4px; border-radius: 6px; }
+      header button:hover { color: var(--ink); background: var(--raised); }
+      .list { overflow: auto; flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+      .card { border: 1px solid var(--line); border-radius: 10px; padding: 16px; background: var(--surface); transition: border-color .15s; }
+      .card.focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+      .quote { font-size: 13.5px; line-height: 1.5; border-left: 3px solid; padding-left: 12px; cursor: pointer; color: var(--ink); }
+      .quote:hover { color: var(--accent); }
+      textarea { width: 100%; margin-top: 12px; background: var(--canvas); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+                 font-size: 13px; line-height: 1.45; resize: vertical; min-height: 46px; color: var(--ink); }
+      textarea::placeholder { color: var(--faint); }
+      textarea:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
+      .row { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+      .dot { width: 16px; height: 16px; border-radius: 50%; cursor: pointer; box-shadow: inset 0 0 0 2px var(--surface); border: 2px solid transparent; }
+      .dot.on { border-color: var(--ink); }
+      .meta { font-family: "PN Mono", monospace; font-size: 11px; color: var(--faint); flex: 1; text-align: right; }
+      .del { all: unset; cursor: pointer; font-size: 12px; color: var(--danger); margin-left: 4px; }
+      .del:hover { text-decoration: underline; }
+      .empty { color: var(--muted); font-size: 13px; text-align: center; margin-top: 56px; line-height: 1.7; padding: 0 24px; }
+      .empty .ring { width: 48px; height: 48px; border-radius: 50%; border: 1px dashed var(--faint); margin: 0 auto 16px; display: grid; place-items: center; color: var(--accent); font-size: 22px; }
+      .empty b { color: var(--ink); }
+      footer { font-family: "PN Mono", monospace; font-size: 11px; color: var(--faint); padding: 12px 20px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; }
     </style>
-    <div class="tip"><button data-act="hl">Highlight</button><button data-act="note">Add note</button></div>
+    <div class="t" id="theme"><div class="tip"><button data-act="hl"><i></i>Highlight</button><button data-act="note">Add note</button></div>
     <aside class="side">
-      <header><h2>Notes on this page</h2><span class="count">0</span><button data-act="close" title="Close">×</button></header>
+      <header><img class="logo" alt="" /><h2>Notes on this page</h2><span class="count">0</span><button data-act="close" title="Close">×</button></header>
       <div class="list"></div>
-      <footer>Page Notes, sample build. Saved in your browser only.</footer>
-    </aside>`;
+      <footer><span>Page Notes, sample build</span><span>Alt+N</span></footer>
+    </aside></div>`;
   document.documentElement.appendChild(host);
+  root.querySelector(".logo").src = chrome.runtime.getURL("icons/48.png");
+  const themeBox = root.getElementById("theme");
+  function applyTheme() {
+    themeBox.classList.toggle("light", PN.resolveTheme(settings.theme) === "light");
+    root.querySelector(".side").classList.toggle("left", settings.side === "left");
+  }
+  for (const [fam, file, weight] of [["PN Plex", "plex-400", 400], ["PN Plex", "plex-500", 500], ["PN Plex", "plex-600", 600],
+                                     ["PN Bricolage", "bricolage-700", 700], ["PN Mono", "mono-500", 500]]) {
+    const ff = new FontFace(fam, `url(${chrome.runtime.getURL("fonts/" + file + ".woff2")})`, { weight: String(weight) });
+    ff.load().then((f) => document.fonts.add(f)).catch(() => {});
+  }
+  function reportCount() { chrome.runtime.sendMessage({ type: "count", count: notes.length }).catch(() => {}); }
 
   const tip = root.querySelector(".tip");
   const side = root.querySelector(".side");
@@ -233,10 +265,11 @@
   document.addEventListener("scroll", hideTooltip, { passive: true });
 
   function renderSidebar(focusId, editFocus) {
-    root.querySelector(".count").textContent = notes.length;
+    reportCount();
+    root.querySelector(".count").textContent = notes.length + (notes.length === 1 ? " note" : " notes");
     list.innerHTML = "";
     if (!notes.length) {
-      list.innerHTML = `<div class="empty">No notes yet.<br>Select text on the page and choose<br><b>Highlight</b> or <b>Add note</b>.</div>`;
+      list.innerHTML = `<div class="empty"><div class="ring">+</div><b>No notes on this page yet</b><br/>Select any text, then choose<br/>Highlight or Add note.</div>`;
       return;
     }
     for (const n of notes) {
@@ -244,8 +277,9 @@
       card.className = "card" + (n.id === focusId ? " focus" : "");
       const q = document.createElement("div");
       q.className = "quote";
-      q.style.borderColor = PN.COLORS[n.color] || PN.COLORS.yellow;
-      q.textContent = n.quote.length > 220 ? n.quote.slice(0, 220) + "..." : n.quote;
+      q.style.borderColor = PN.SWATCH[n.color] || PN.SWATCH.yellow;
+      const shown = n.display || n.quote;
+      q.textContent = shown.length > 220 ? shown.slice(0, 220).trim() + "..." : shown;
       q.addEventListener("click", () => {
         const m = document.querySelector(`mark.pn-mark[data-pn-id="${n.id}"]`);
         if (m) m.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -257,11 +291,11 @@
       ta.addEventListener("input", () => { clearTimeout(t); t = setTimeout(() => updateNote(n.id, { note: ta.value }), 300); });
       const row = document.createElement("div");
       row.className = "row";
-      for (const [name, hex] of Object.entries(PN.COLORS)) {
+      for (const [name, hex] of Object.entries(PN.SWATCH)) {
         const d = document.createElement("span");
         d.className = "dot" + (n.color === name ? " on" : "");
         d.style.background = hex;
-        d.title = name;
+        d.title = PN.LABEL[name];
         d.addEventListener("click", async () => { await updateNote(n.id, { color: name }); renderSidebar(n.id); });
         row.appendChild(d);
       }
@@ -301,7 +335,7 @@
   });
 
   chrome.storage.onChanged.addListener(async (changes, area) => {
-    if (area === "sync" && changes.settings) settings = await PN.getSettings();
+    if (area === "sync" && changes.settings) { settings = await PN.getSettings(); applyTheme(); }
     if (area === "local" && changes[KEY]) {
       const fresh = changes[KEY].newValue || [];
       const freshIds = new Set(fresh.map((n) => n.id));
@@ -314,6 +348,7 @@
 
   (async () => {
     settings = await PN.getSettings();
+    applyTheme();
     notes = await PN.getNotes(KEY);
     restoreAll();
     renderSidebar();

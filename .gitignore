@@ -1,5 +1,9 @@
 raw/
 notes.md
 shot*.png
+hero*.png
+deliverables*.png
+process*.png
+_check_*
 node_modules/
 .DS_Store

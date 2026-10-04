@@ -10,14 +10,22 @@ async function saveSettings(patch) {
 
 async function renderSettings() {
   const s = await PN.getSettings();
+  document.documentElement.dataset.theme = PN.resolveTheme(s.theme);
   $("tooltip").checked = s.showTooltip;
+  for (const b of $("theme").querySelectorAll("button")) {
+    b.classList.toggle("on", b.dataset.v === s.theme);
+    b.onclick = () => saveSettings({ theme: b.dataset.v });
+  }
+  for (const b of $("side").querySelectorAll("button")) {
+    b.classList.toggle("on", b.dataset.v === s.side);
+    b.onclick = () => saveSettings({ side: b.dataset.v });
+  }
   const box = $("swatches");
   box.innerHTML = "";
-  for (const [name, hex] of Object.entries(PN.COLORS)) {
+  for (const name of Object.keys(PN.COLORS)) {
     const d = document.createElement("div");
     d.className = "sw" + (s.color === name ? " on" : "");
-    d.style.background = hex;
-    d.title = name;
+    d.innerHTML = `<i style="background:${PN.SWATCH[name]}"></i>${PN.LABEL[name]}`;
     d.onclick = () => saveSettings({ color: name });
     box.appendChild(d);
   }
@@ -27,37 +35,43 @@ async function renderNotes() {
   const q = $("q").value.trim().toLowerCase();
   const pages = (await PN.allPages()).sort((a, b) =>
     Math.max(...b.notes.map((n) => n.created)) - Math.max(...a.notes.map((n) => n.created)));
-  const total = pages.reduce((a, p) => a + p.notes.length, 0);
-  $("totals").textContent = `${total} ${total === 1 ? "note" : "notes"} on ${pages.length} ${pages.length === 1 ? "page" : "pages"}, stored locally in this browser.`;
+  $("tNotes").textContent = pages.reduce((a, p) => a + p.notes.length, 0);
+  $("tPages").textContent = pages.length;
   const sites = $("sites");
   sites.innerHTML = "";
   let shown = 0;
   for (const p of pages) {
-    const hits = p.notes.filter((n) => !q || n.quote.toLowerCase().includes(q) || (n.note || "").toLowerCase().includes(q));
+    const hits = p.notes.filter((n) => !q || (n.display || n.quote).toLowerCase().includes(q) || (n.note || "").toLowerCase().includes(q));
     if (!hits.length) continue;
     shown++;
     const div = document.createElement("div");
     div.className = "site";
     const a = document.createElement("a");
     a.href = p.url; a.target = "_blank";
-    a.textContent = (hits[0].title || p.url) + `  (${hits.length})`;
+    a.textContent = hits[0].title || p.url;
+    const c = document.createElement("span");
+    c.className = "count"; c.textContent = `${hits.length} ${hits.length === 1 ? "note" : "notes"}`;
     const u = document.createElement("div");
-    u.className = "url"; u.textContent = p.url;
-    div.append(a, u);
+    u.className = "url"; u.textContent = p.url.replace(/^https?:\/\//, "");
+    div.append(a, c, u);
     for (const n of hits) {
       const w = document.createElement("div");
       w.className = "n";
       const qq = document.createElement("div");
       qq.className = "quote";
-      qq.style.borderColor = PN.COLORS[n.color] || PN.COLORS.yellow;
-      qq.textContent = n.quote.length > 160 ? n.quote.slice(0, 160) + "..." : n.quote;
+      qq.style.borderColor = PN.SWATCH[n.color] || PN.SWATCH.yellow;
+      const shown = n.display || n.quote;
+      qq.textContent = shown.length > 170 ? shown.slice(0, 170).trim() + "..." : shown;
       w.appendChild(qq);
       if (n.note) { const t = document.createElement("div"); t.className = "note"; t.textContent = n.note; w.appendChild(t); }
+      const m = document.createElement("div");
+      m.className = "meta"; m.textContent = PN.timeAgo(n.created);
+      w.appendChild(m);
       div.appendChild(w);
     }
     sites.appendChild(div);
   }
-  if (!shown) sites.innerHTML = `<p class="muted">${q ? "No notes match that search." : "No notes yet."}</p>`;
+  if (!shown) sites.innerHTML = `<div class="empty">${q ? "No notes match that search." : "No notes yet. Select text on any page to start."}</div>`;
 }
 
 $("tooltip").onchange = (e) => saveSettings({ showTooltip: e.target.checked });
@@ -84,10 +98,9 @@ $("file").onchange = async (e) => {
 };
 $("clear").onclick = async () => {
   if (!confirm("Delete every saved note?")) return;
-  const keys = (await PN.allPages()).map((p) => p.key);
-  await chrome.storage.local.remove(keys);
+  await chrome.storage.local.remove((await PN.allPages()).map((p) => p.key));
   renderNotes();
 };
-chrome.storage.onChanged.addListener(() => { renderNotes(); });
+chrome.storage.onChanged.addListener((ch, area) => { if (area === "sync") renderSettings(); else renderNotes(); });
 renderSettings();
 renderNotes();

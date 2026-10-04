@@ -1,0 +1,34 @@
+{
+  "out": ".",
+  "hero": {
+    "headline": "Custom Chrome\nextensions",
+    "accent": "Chrome",
+    "stack": "Manifest V3 · JavaScript · Playwright tests",
+    "chips": ["Popup and options page", "Works on any website", "Store-ready zip"],
+    "shot": "raw/hero_dark.png",
+    "url": "Page Notes on a public domain book",
+    "shotPosition": "left top"
+  },
+  "deliverables": {
+    "title": "What you get",
+    "accent": "you get",
+    "subtitle": "Source on GitHub · zipped build · end-to-end tests",
+    "tiles": [
+      { "label": "In-page sidebar", "img": "raw/sidebar_light.png", "pos": "right top" },
+      { "label": "Settings page", "img": "raw/options_light.png", "pos": "center top" },
+      { "label": "Toolbar popup", "img": "raw/popup_light.png", "pos": "center top" },
+      { "label": "Automated tests", "img": "raw/tests_light.png", "pos": "left top" }
+    ]
+  },
+  "process": {
+    "title": "Store-ready in four days",
+    "accent": "four days",
+    "subtitle": "Minimal permissions, tested in a real browser",
+    "steps": [
+      { "day": "Day 1", "title": "Scope and permissions", "text": "What the extension does, and the fewest permissions it needs." },
+      { "day": "Day 2", "title": "Build the core", "text": "Content script, background worker and storage." },
+      { "day": "Day 3", "title": "Popup and settings", "text": "Toolbar popup, options page, dark and light themes." },
+      { "day": "Day 4", "title": "Test and package", "text": "Browser tests, a zipped build and a store listing guide." }
+    ]
+  }
+}

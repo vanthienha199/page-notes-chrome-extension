@@ -1,14 +1,45 @@
+@font-face { font-family: "Bricolage"; src: url(fonts/bricolage-700.woff2) format("woff2"); font-weight: 700; }
+@font-face { font-family: "Plex"; src: url(fonts/plex-400.woff2) format("woff2"); font-weight: 400; }
+@font-face { font-family: "Plex"; src: url(fonts/plex-500.woff2) format("woff2"); font-weight: 500; }
+@font-face { font-family: "Plex"; src: url(fonts/plex-600.woff2) format("woff2"); font-weight: 600; }
+@font-face { font-family: "Mono"; src: url(fonts/mono-500.woff2) format("woff2"); font-weight: 500; }
+
+:root {
+  --canvas: #15171B; --surface: #1E2126; --raised: #262A30; --line: #2F333A;
+  --ink: #F3EFE7; --muted: #A7A39B; --faint: #77736C;
+  --accent: #F2994A; --accent-ink: #1A1206; --danger: #E8806E;
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(0,0,0,.35), 0 12px 32px rgba(0,0,0,.28);
+}
+:root[data-theme="light"] {
+  --canvas: #F6F3EE; --surface: #FFFFFF; --raised: #F1EDE6; --line: #E4DED4;
+  --ink: #1B1A17; --muted: #6E6A62; --faint: #9A958C;
+  --accent: #D9782A; --accent-ink: #FFFFFF; --danger: #C2543F;
+  --shadow: 0 1px 2px rgba(40,30,10,.06), 0 12px 32px rgba(40,30,10,.08);
+}
 * { box-sizing: border-box; }
-body { margin: 0; font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #111827; background: #fff; }
-.brand { display: flex; align-items: center; gap: 10px; }
-.brand img { width: 28px; height: 28px; }
-.brand h1 { font-size: 16px; margin: 0; }
-.brand small { display: block; font-size: 11px; color: #6b7280; font-weight: 400; }
-.badge { font-size: 10px; letter-spacing: .04em; text-transform: uppercase; background: #eef2ff; color: #4338ca; border-radius: 999px; padding: 2px 8px; margin-left: auto; }
-button.primary { all: unset; cursor: pointer; background: #4f46e5; color: #fff; font-size: 13px; padding: 8px 12px; border-radius: 8px; text-align: center; }
-button.primary:hover { background: #4338ca; }
-button.ghost { all: unset; cursor: pointer; border: 1px solid #e5e7eb; font-size: 13px; padding: 7px 12px; border-radius: 8px; text-align: center; color: #374151; }
-button.ghost:hover { background: #f9fafb; }
-.quote { font-size: 13px; line-height: 1.45; border-left: 4px solid; padding-left: 8px; }
-.note { font-size: 12px; color: #4b5563; margin-top: 4px; padding-left: 12px; }
-.muted { color: #6b7280; font-size: 12px; }
+html, body { background: var(--canvas); }
+body { margin: 0; font-family: "Plex", system-ui, sans-serif; color: var(--ink); font-size: 14px; line-height: 1.5;
+       -webkit-font-smoothing: antialiased; }
+.display { font-family: "Bricolage", "Plex", sans-serif; font-weight: 700; letter-spacing: -0.02em; }
+.mono, .num { font-family: "Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand img { width: 32px; height: 32px; border-radius: 8px; }
+.brand h1 { font-size: 18px; margin: 0; line-height: 1.15; }
+.brand small { display: block; font-family: "Plex"; font-weight: 400; letter-spacing: 0; font-size: 12px; color: var(--muted); }
+.badge { font-family: "Mono"; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent);
+         border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); border-radius: 999px; padding: 3px 10px; margin-left: auto; }
+.btn { all: unset; box-sizing: border-box; cursor: pointer; font-size: 13px; font-weight: 500; padding: 10px 16px;
+       border-radius: var(--radius); text-align: center; transition: background .15s ease-out, transform .1s ease-out; }
+.btn:active { transform: scale(.97); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.06); }
+.btn.ghost { border: 1px solid var(--line); color: var(--ink); background: var(--surface); }
+.btn.ghost:hover { background: var(--raised); }
+.btn.danger { color: var(--danger); }
+.btn[disabled] { opacity: .45; pointer-events: none; }
+.quote { font-size: 13px; line-height: 1.5; border-left: 3px solid; padding-left: 12px; color: var(--ink); }
+.note { font-size: 13px; color: var(--muted); margin-top: 4px; padding-left: 15px; }
+.muted { color: var(--muted); font-size: 12px; }
+.eyebrow { font-family: "Mono"; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); margin: 0 0 12px; font-weight: 500; }

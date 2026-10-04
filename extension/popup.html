@@ -1,23 +1,38 @@
 <!doctype html>
-<html><head><meta charset="utf-8"><link rel="stylesheet" href="ui.css">
+<html data-theme="dark"><head><meta charset="utf-8"><link rel="stylesheet" href="ui.css">
 <style>
-  body { width: 360px; }
-  .top { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; }
-  .page { padding: 12px 16px 4px; }
-  .page .title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .items { padding: 4px 16px 8px; max-height: 300px; overflow: auto; }
-  .item { padding: 8px 0; border-bottom: 1px solid #f3f4f6; cursor: pointer; }
+  body { width: 368px; }
+  .top { padding: 16px 20px; border-bottom: 1px solid var(--line); }
+  .page { padding: 16px 20px 8px; }
+  .page .title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .items { padding: 0 20px; max-height: 300px; overflow: auto; }
+  .item { padding: 12px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
   .item:last-child { border-bottom: 0; }
-  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px 16px; border-top: 1px solid #f1f5f9; }
-  .stats { display: flex; gap: 8px; padding: 0 16px 14px; }
-  .stat { flex: 1; background: #f9fafb; border-radius: 8px; padding: 8px; text-align: center; }
-  .stat b { display: block; font-size: 18px; }
+  .item:hover .quote { color: var(--accent); }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 12px 20px 16px; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 8px; text-align: center; }
+  .stat b { display: block; font-size: 20px; line-height: 1.2; font-weight: 500; }
+  .actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 16px 20px; border-top: 1px solid var(--line); background: var(--surface); }
+  .empty { text-align: center; padding: 24px 12px 20px; }
+  .empty .ring { width: 44px; height: 44px; border-radius: 50%; margin: 0 auto 12px; border: 1px dashed var(--faint);
+                 display: grid; place-items: center; color: var(--accent); font-size: 20px; }
+  .toast { position: fixed; left: 50%; bottom: 76px; transform: translateX(-50%); background: var(--ink); color: var(--canvas);
+           font-size: 12px; padding: 6px 12px; border-radius: 999px; opacity: 0; transition: opacity .2s; }
 </style></head>
 <body>
-  <div class="top brand"><img src="icons/48.png" alt=""><h1>Page Notes<small>Highlight and note any page</small></h1><span class="badge">Sample</span></div>
-  <div class="page"><div class="title" id="title">This page</div><div class="muted" id="sub"></div></div>
+  <div class="top brand"><img src="icons/48.png" alt=""><h1 class="display">Page Notes<small>Highlight and note any page</small></h1><span class="badge">Sample</span></div>
+  <div class="page"><div class="title" id="title">This page</div><div class="muted mono" id="sub"></div></div>
   <div class="items" id="items"></div>
-  <div class="stats"><div class="stat"><b id="sPage">0</b><span class="muted">on this page</span></div><div class="stat"><b id="sAll">0</b><span class="muted">all notes</span></div><div class="stat"><b id="sSites">0</b><span class="muted">pages</span></div></div>
-  <div class="actions"><button class="primary" id="side">Open sidebar</button><button class="ghost" id="opts">All notes</button></div>
+  <div class="stats">
+    <div class="stat"><b class="num" id="sPage">0</b><span class="muted">this page</span></div>
+    <div class="stat"><b class="num" id="sAll">0</b><span class="muted" id="lAll">all notes</span></div>
+    <div class="stat"><b class="num" id="sSites">0</b><span class="muted" id="lSites">pages</span></div>
+  </div>
+  <div class="actions">
+    <button class="btn primary" id="side">Sidebar</button>
+    <button class="btn ghost" id="copy">Copy</button>
+    <button class="btn ghost" id="opts">All notes</button>
+  </div>
+  <div class="toast" id="toast">Copied as Markdown</div>
   <script src="shared.js"></script><script src="popup.js"></script>
 </body></html>
