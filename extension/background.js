@@ -17,7 +17,7 @@ chrome.commands.onCommand.addListener(async (cmd) => {
 // toolbar badge: the content script reports how many notes its page has
 chrome.runtime.onMessage.addListener((msg, sender) => {
   if (msg.type !== "count" || !sender.tab) return;
-  chrome.action.setBadgeBackgroundColor({ color: "#F2994A", tabId: sender.tab.id });
-  chrome.action.setBadgeTextColor && chrome.action.setBadgeTextColor({ color: "#1A1206", tabId: sender.tab.id });
+  chrome.action.setBadgeBackgroundColor({ color: "#1C1B18", tabId: sender.tab.id });
+  chrome.action.setBadgeTextColor && chrome.action.setBadgeTextColor({ color: "#FFFDF7", tabId: sender.tab.id });
   chrome.action.setBadgeText({ text: msg.count ? String(msg.count) : "", tabId: sender.tab.id });
 });

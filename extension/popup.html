@@ -1,37 +1,37 @@
 <!doctype html>
-<html data-theme="dark"><head><meta charset="utf-8"><link rel="stylesheet" href="ui.css">
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="ui.css">
 <style>
-  body { width: 368px; }
-  .top { padding: 16px 20px; border-bottom: 1px solid var(--line); }
-  .page { padding: 16px 20px 8px; }
-  .page .title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .items { padding: 0 20px; max-height: 300px; overflow: auto; }
-  .item { padding: 12px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
-  .item:last-child { border-bottom: 0; }
-  .item:hover .quote { color: var(--accent); }
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 12px 20px 16px; }
-  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 8px; text-align: center; }
-  .stat b { display: block; font-size: 20px; line-height: 1.2; font-weight: 500; }
-  .actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 16px 20px; border-top: 1px solid var(--line); background: var(--surface); }
-  .empty { text-align: center; padding: 24px 12px 20px; }
-  .empty .ring { width: 44px; height: 44px; border-radius: 50%; margin: 0 auto 12px; border: 1px dashed var(--faint);
-                 display: grid; place-items: center; color: var(--accent); font-size: 20px; }
-  .toast { position: fixed; left: 50%; bottom: 76px; transform: translateX(-50%); background: var(--ink); color: var(--canvas);
-           font-size: 12px; padding: 6px 12px; border-radius: 999px; opacity: 0; transition: opacity .2s; }
+  body { width: 360px; }
+  .top { padding: 18px 20px 14px; display: flex; align-items: baseline; justify-content: space-between; }
+  .top h1 { font-size: 22px; line-height: 1.1; margin: 0; }
+  .page { padding: 0 20px 14px; border-bottom: 1px solid var(--line); }
+  .page .title { font-weight: 600; font-size: 15px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .items { max-height: 330px; overflow: auto; }
+  .item { display: grid; grid-template-columns: 76px 1fr; cursor: pointer; }
+  .item .when { padding: 14px 8px 14px 18px; white-space: nowrap; border-right: 1px solid var(--line); font-size: 12px; line-height: 1.35; color: var(--faint); }
+  .item .when b { display: block; font-weight: 600; color: var(--muted); font-size: 13px; }
+  .item .body { padding: 14px 20px 14px 14px; border-bottom: 1px solid var(--line); }
+  .item:last-child .body { border-bottom: 0; }
+  .item:hover .quote { text-decoration: underline; text-decoration-color: var(--faint); text-underline-offset: 3px; }
+  .item:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+  .empty { display: grid; grid-template-columns: 76px 1fr; }
+  .empty .when { border-right: 1px solid var(--line); }
+  .empty .body { padding: 22px 20px 22px 14px; }
+  .empty h2 { font-family: "Young Serif", Georgia, serif; font-weight: 400; font-size: 17px; margin: 0 0 6px; }
+  .sum { padding: 12px 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+  .actions { display: flex; align-items: center; gap: 16px; padding: 14px 20px 18px; }
+  .actions .btn.primary { flex: none; }
+  .toast { position: fixed; left: 50%; bottom: 72px; transform: translateX(-50%); background: var(--ink); color: var(--canvas);
+           font-size: 13px; padding: 6px 12px; border-radius: 6px; opacity: 0; transition: opacity .2s ease-out; }
 </style></head>
 <body>
-  <div class="top brand"><img src="icons/48.png" alt=""><h1 class="display">Page Notes<small>Highlight and note any page</small></h1><span class="badge">Sample</span></div>
-  <div class="page"><div class="title" id="title">This page</div><div class="muted mono" id="sub"></div></div>
+  <div class="top"><h1 class="serif"><span class="marked">Page Notes</span></h1><button class="link" id="opts">All notes</button></div>
+  <div class="page"><div class="title" id="title">This page</div><div class="muted" id="sub"></div></div>
   <div class="items" id="items"></div>
-  <div class="stats">
-    <div class="stat"><b class="num" id="sPage">0</b><span class="muted">this page</span></div>
-    <div class="stat"><b class="num" id="sAll">0</b><span class="muted" id="lAll">all notes</span></div>
-    <div class="stat"><b class="num" id="sSites">0</b><span class="muted" id="lSites">pages</span></div>
-  </div>
+  <div class="sum" id="sum"></div>
   <div class="actions">
-    <button class="btn primary" id="side">Sidebar</button>
-    <button class="btn ghost" id="copy">Copy</button>
-    <button class="btn ghost" id="opts">All notes</button>
+    <button class="btn primary" id="side">Open sidebar</button>
+    <button class="link" id="copy">Copy as Markdown</button>
   </div>
   <div class="toast" id="toast">Copied as Markdown</div>
   <script src="shared.js"></script><script src="popup.js"></script>

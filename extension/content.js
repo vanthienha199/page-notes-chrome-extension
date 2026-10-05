@@ -6,6 +6,7 @@
   const CONTEXT = 32;
   let notes = [];
   let settings = PN.DEFAULTS;
+  let fresh = null;
 
   // ---------- text index over the page ----------
   function textNodes(root) {
@@ -48,6 +49,21 @@
     return i < 0 ? -1 : idx.starts[i] + offset;
   }
 
+  const still = matchMedia("(prefers-reduced-motion: reduce)");
+  function paint(mark, color) {
+    const c = PN.COLORS[color] || PN.COLORS.pink;
+    mark.style.backgroundColor = "transparent";
+    mark.style.backgroundImage = `linear-gradient(${c}, ${c})`;
+    mark.style.backgroundRepeat = "no-repeat";
+    mark.style.backgroundSize = "100% 100%";
+  }
+  // saving sweeps the fill left to right, 180 ms
+  function sweep(id) {
+    if (still.matches) return;
+    document.querySelectorAll(`mark.pn-mark[data-pn-id="${id}"]`).forEach((m) =>
+      m.animate([{ backgroundSize: "0% 100%" }, { backgroundSize: "100% 100%" }], { duration: 180, easing: "cubic-bezier(.2,.8,.2,1)" }));
+  }
+
   // ---------- wrap a text span in <mark> elements ----------
   function wrapSpan(start, end, note) {
     const idx = buildIndex();
@@ -66,11 +82,13 @@
       const mark = document.createElement("mark");
       mark.className = "pn-mark";
       mark.dataset.pnId = note.id;
-      mark.style.background = PN.COLORS[note.color] || PN.COLORS.yellow;
+      paint(mark, note.color);
       mark.style.color = "inherit";
       mark.style.borderRadius = "2px";
       mark.style.padding = "0 1px";
       mark.style.cursor = "pointer";
+      mark.style.boxDecorationBreak = "clone";
+      mark.style.webkitBoxDecorationBreak = "clone";
       if (note.note) mark.title = note.note;
       node.parentNode.insertBefore(mark, node);
       mark.appendChild(node);
@@ -144,7 +162,9 @@
     sel.removeAllRanges();
     hideTooltip();
     wrapSpan(start, end, note);
+    sweep(note.id);
     notes.push(note);
+    fresh = note.id;
     await PN.setNotes(KEY, notes);
     if (withNote) openSidebar(note.id, true);
     else renderSidebar();
@@ -157,7 +177,7 @@
     await PN.setNotes(KEY, notes);
     document.querySelectorAll(`mark.pn-mark[data-pn-id="${id}"]`).forEach((m) => {
       m.title = n.note || "";
-      m.style.background = PN.COLORS[n.color] || PN.COLORS.yellow;
+      paint(m, n.color);
     });
   }
 
@@ -176,63 +196,72 @@
   root.innerHTML = `
     <style>
       :host { all: initial; }
-      .t { --canvas:#15171B; --surface:#1E2126; --raised:#262A30; --line:#2F333A; --ink:#F3EFE7; --muted:#A7A39B; --faint:#77736C; --accent:#F2994A; --accent-ink:#1A1206; --danger:#E8806E; }
-      .t.light { --canvas:#F6F3EE; --surface:#FFFFFF; --raised:#F1EDE6; --line:#E4DED4; --ink:#1B1A17; --muted:#6E6A62; --faint:#9A958C; --accent:#D9782A; --accent-ink:#FFFFFF; --danger:#C2543F; }
-      * { box-sizing: border-box; font-family: "PN Plex", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
-      .tip { position: fixed; z-index: 2147483647; display: none; background: var(--canvas); color: var(--ink);
-             border: 1px solid var(--line); border-radius: 10px; padding: 4px; gap: 2px;
-             box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.28); }
-      .tip button { all: unset; cursor: pointer; font-size: 13px; font-weight: 500; padding: 7px 12px; border-radius: 7px; display: flex; align-items: center; gap: 8px; }
-      .tip button:hover { background: var(--raised); }
-      .tip button i { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+      .t { --canvas:#FFFDF7; --surface:#FFFFFF; --raised:#F6F2E8; --line:#E9E3D6; --ink:#1C1B18; --muted:#5F5B53; --faint:#8C877D; --danger:#A8322A; --marker:#F7A8C8; }
+      .t.dark { --canvas:#1A1917; --surface:#23221F; --raised:#2C2A26; --line:#393630; --ink:#F2EFE8; --muted:#B3AEA4; --faint:#868178; --danger:#F08C80; --marker:#B75F86; }
+      * { box-sizing: border-box; font-family: "PN Figtree", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+      .tip { position: fixed; z-index: 2147483647; display: none; background: var(--surface); color: var(--ink);
+             border: 1px solid var(--line); border-radius: 8px; padding: 4px; gap: 2px;
+             box-shadow: 0 1px 2px rgba(0,0,0,.12), 0 10px 28px rgba(0,0,0,.16); }
+      .tip button { all: unset; cursor: pointer; font-size: 14px; font-weight: 500; padding: 7px 12px; border-radius: 6px; display: flex; align-items: center; gap: 8px; }
+      .tip button:hover, .tip button:focus-visible { background: var(--raised); }
+      .tip button i { width: 12px; height: 12px; border-radius: 3px; }
       .side { position: fixed; top: 0; right: 0; height: 100vh; width: 360px; z-index: 2147483646;
               background: var(--canvas); color: var(--ink); border-left: 1px solid var(--line);
-              box-shadow: -1px 0 0 rgba(0,0,0,.2), -24px 0 48px rgba(0,0,0,.22);
+              box-shadow: -18px 0 40px rgba(0,0,0,.10);
               transform: translateX(100%); transition: transform .25s cubic-bezier(.2,.8,.2,1); display: flex; flex-direction: column; }
-      .side.left { right: auto; left: 0; border-left: 0; border-right: 1px solid var(--line); transform: translateX(-100%);
-                   box-shadow: 1px 0 0 rgba(0,0,0,.2), 24px 0 48px rgba(0,0,0,.22); }
+      .side.left { right: auto; left: 0; border-left: 0; border-right: 1px solid var(--line); transform: translateX(-100%); box-shadow: 18px 0 40px rgba(0,0,0,.10); }
       .side.open { transform: none; }
-      header { padding: 20px 20px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); }
-      header .logo { width: 28px; height: 28px; border-radius: 8px; }
-      header h2 { font-family: "PN Bricolage", "PN Plex", sans-serif; font-weight: 700; letter-spacing: -0.02em; font-size: 19px; margin: 0; flex: 1; }
-      header .count { font-family: "PN Mono", monospace; font-size: 11px; color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); border-radius: 999px; padding: 2px 9px; }
-      header button { all: unset; cursor: pointer; color: var(--muted); font-size: 20px; line-height: 1; padding: 2px 4px; border-radius: 6px; }
-      header button:hover { color: var(--ink); background: var(--raised); }
-      .list { overflow: auto; flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-      .card { border: 1px solid var(--line); border-radius: 10px; padding: 16px; background: var(--surface); transition: border-color .15s; }
-      .card.focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
-      .quote { font-size: 13.5px; line-height: 1.5; border-left: 3px solid; padding-left: 12px; cursor: pointer; color: var(--ink); }
-      .quote:hover { color: var(--accent); }
-      textarea { width: 100%; margin-top: 12px; background: var(--canvas); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
-                 font-size: 13px; line-height: 1.45; resize: vertical; min-height: 46px; color: var(--ink); }
+      .side:not(.open) { box-shadow: none; }
+      header { padding: 20px 20px 14px; display: flex; align-items: baseline; gap: 12px; border-bottom: 1px solid var(--line); }
+      header h2 { font-family: "PN Young Serif", Georgia, serif; font-weight: 400; font-size: 21px; margin: 0; flex: 1; }
+      header .count { font-size: 13px; color: var(--muted); }
+      header button { all: unset; cursor: pointer; color: var(--muted); font-size: 22px; line-height: 1; padding: 2px 6px; border-radius: 6px; }
+      header button:hover, header button:focus-visible { color: var(--ink); background: var(--raised); }
+      .list { overflow: auto; flex: 1; padding: 0 0 16px; }
+      .card { display: grid; grid-template-columns: 76px 1fr; }
+      .when { padding: 16px 8px 16px 18px; white-space: nowrap; border-right: 1px solid var(--line); font-size: 12px; line-height: 1.35; color: var(--faint); }
+      .when b { display: block; font-weight: 600; color: var(--muted); font-size: 13px; }
+      .body { padding: 16px 20px 16px 14px; border-bottom: 1px solid var(--line); min-width: 0; }
+      .card.focus .body { background: var(--surface); }
+      .card.drop { animation: drop .2s cubic-bezier(.2,.8,.2,1) .18s both; }
+      @keyframes drop { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+      .quote { font-family: "PN Young Serif", Georgia, serif; font-size: 15px; line-height: 1.55; cursor: pointer; color: var(--ink); }
+      .quote span { font-family: "PN Young Serif", Georgia, serif; padding: 1px 2px; border-radius: 2px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+      .quote:hover span { text-decoration: underline; text-decoration-color: var(--faint); text-underline-offset: 3px; }
+      textarea { width: 100%; margin-top: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px;
+                 font-size: 14px; line-height: 1.45; resize: vertical; min-height: 44px; color: var(--ink); }
       textarea::placeholder { color: var(--faint); }
-      textarea:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
-      .row { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
-      .dot { width: 16px; height: 16px; border-radius: 50%; cursor: pointer; box-shadow: inset 0 0 0 2px var(--surface); border: 2px solid transparent; }
+      textarea:focus { outline: 2px solid var(--ink); outline-offset: 0; border-color: transparent; }
+      .row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+      .dot { all: unset; width: 16px; height: 16px; border-radius: 4px; cursor: pointer; box-shadow: inset 0 0 0 2px var(--canvas); border: 2px solid transparent; }
       .dot.on { border-color: var(--ink); }
-      .meta { font-family: "PN Mono", monospace; font-size: 11px; color: var(--faint); flex: 1; text-align: right; }
-      .del { all: unset; cursor: pointer; font-size: 12px; color: var(--danger); margin-left: 4px; }
-      .del:hover { text-decoration: underline; }
-      .empty { color: var(--muted); font-size: 13px; text-align: center; margin-top: 56px; line-height: 1.7; padding: 0 24px; }
-      .empty .ring { width: 48px; height: 48px; border-radius: 50%; border: 1px dashed var(--faint); margin: 0 auto 16px; display: grid; place-items: center; color: var(--accent); font-size: 22px; }
-      .empty b { color: var(--ink); }
-      footer { font-family: "PN Mono", monospace; font-size: 11px; color: var(--faint); padding: 12px 20px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; }
+      .dot:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+      .meta { font-size: 12px; color: var(--faint); flex: 1; text-align: right; }
+      .del { all: unset; cursor: pointer; font-size: 13px; color: var(--danger); margin-left: 4px; }
+      .del:hover, .del:focus-visible { text-decoration: underline; }
+      .empty { display: grid; grid-template-columns: 76px 1fr; }
+      .empty .gut { border-right: 1px solid var(--line); min-height: 160px; }
+      .empty .body { border-bottom: 0; padding-top: 24px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+      .empty h3 { font-family: "PN Young Serif", Georgia, serif; font-weight: 400; font-size: 18px; color: var(--ink); margin: 0 0 6px; }
+      footer { font-size: 13px; color: var(--faint); padding: 12px 20px; border-top: 1px solid var(--line); }
+      @media (prefers-reduced-motion: reduce) { .side { transition: none; } .card.drop { animation: none; } }
     </style>
     <div class="t" id="theme"><div class="tip"><button data-act="hl"><i></i>Highlight</button><button data-act="note">Add note</button></div>
     <aside class="side">
-      <header><img class="logo" alt="" /><h2>Notes on this page</h2><span class="count">0</span><button data-act="close" title="Close">×</button></header>
+      <header><h2>Notes on this page</h2><span class="count">0 notes</span><button data-act="close" title="Close" aria-label="Close">×</button></header>
       <div class="list"></div>
-      <footer><span>Page Notes, sample build</span><span>Alt+N</span></footer>
+      <footer>Alt+N opens and closes this sidebar.</footer>
     </aside></div>`;
   document.documentElement.appendChild(host);
-  root.querySelector(".logo").src = chrome.runtime.getURL("icons/48.png");
   const themeBox = root.getElementById("theme");
   function applyTheme() {
-    themeBox.classList.toggle("light", PN.resolveTheme(settings.theme) === "light");
+    themeBox.classList.toggle("dark", PN.resolveTheme(settings.theme) === "dark");
+    root.querySelector(".tip i").style.background = PN.SWATCH[settings.color] || PN.SWATCH.pink;
     root.querySelector(".side").classList.toggle("left", settings.side === "left");
   }
-  for (const [fam, file, weight] of [["PN Plex", "plex-400", 400], ["PN Plex", "plex-500", 500], ["PN Plex", "plex-600", 600],
-                                     ["PN Bricolage", "bricolage-700", 700], ["PN Mono", "mono-500", 500]]) {
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => applyTheme());
+  for (const [fam, file, weight] of [["PN Figtree", "figtree-400", 400], ["PN Figtree", "figtree-500", 500], ["PN Figtree", "figtree-600", 600],
+                                     ["PN Young Serif", "youngserif-400", 400]]) {
     const ff = new FontFace(fam, `url(${chrome.runtime.getURL("fonts/" + file + ".woff2")})`, { weight: String(weight) });
     ff.load().then((f) => document.fonts.add(f)).catch(() => {});
   }
@@ -269,33 +298,45 @@
     root.querySelector(".count").textContent = notes.length + (notes.length === 1 ? " note" : " notes");
     list.innerHTML = "";
     if (!notes.length) {
-      list.innerHTML = `<div class="empty"><div class="ring">+</div><b>No notes on this page yet</b><br/>Select any text, then choose<br/>Highlight or Add note.</div>`;
+      list.innerHTML = `<div class="empty"><div class="gut"></div><div class="body"><h3>No notes on this page yet</h3>Select any text, then choose Highlight or Add note. Your notes come back every time you return to this page.</div></div>`;
       return;
     }
+    let lastDay = "";
     for (const n of notes) {
       const card = document.createElement("div");
-      card.className = "card" + (n.id === focusId ? " focus" : "");
+      card.className = "card" + (n.id === focusId ? " focus" : "") + (n.id === fresh ? " drop" : "");
+      const when = document.createElement("div");
+      when.className = "when";
+      const day = PN.day(n.created);
+      if (day !== lastDay) { const b = document.createElement("b"); b.textContent = day; when.appendChild(b); lastDay = day; }
+      when.append(PN.clock(n.created));
+      const body = document.createElement("div");
+      body.className = "body";
       const q = document.createElement("div");
       q.className = "quote";
-      q.style.borderColor = PN.SWATCH[n.color] || PN.SWATCH.yellow;
+      const hl = document.createElement("span");
+      hl.style.background = PN.COLORS[n.color] || PN.COLORS.pink;
       const shown = n.display || n.quote;
-      q.textContent = shown.length > 220 ? shown.slice(0, 220).trim() + "..." : shown;
+      hl.textContent = shown.length > 220 ? shown.slice(0, 220).trim() + "..." : shown;
+      q.appendChild(hl);
       q.addEventListener("click", () => {
         const m = document.querySelector(`mark.pn-mark[data-pn-id="${n.id}"]`);
-        if (m) m.scrollIntoView({ behavior: "smooth", block: "center" });
+        if (m) m.scrollIntoView({ behavior: still.matches ? "auto" : "smooth", block: "center" });
       });
       const ta = document.createElement("textarea");
       ta.placeholder = "Write a note...";
+      ta.setAttribute("aria-label", "Note");
       ta.value = n.note;
       let t;
       ta.addEventListener("input", () => { clearTimeout(t); t = setTimeout(() => updateNote(n.id, { note: ta.value }), 300); });
       const row = document.createElement("div");
       row.className = "row";
       for (const [name, hex] of Object.entries(PN.SWATCH)) {
-        const d = document.createElement("span");
+        const d = document.createElement("button");
         d.className = "dot" + (n.color === name ? " on" : "");
         d.style.background = hex;
         d.title = PN.LABEL[name];
+        d.setAttribute("aria-label", PN.LABEL[name]);
         d.addEventListener("click", async () => { await updateNote(n.id, { color: name }); renderSidebar(n.id); });
         row.appendChild(d);
       }
@@ -307,12 +348,14 @@
       del.textContent = "Delete";
       del.addEventListener("click", () => deleteNote(n.id));
       row.append(meta, del);
-      card.append(q, ta, row);
+      body.append(q, ta, row);
+      card.append(when, body);
       list.appendChild(card);
       if (n.id === focusId) {
         setTimeout(() => { card.scrollIntoView({ block: "nearest" }); if (editFocus) ta.focus(); }, 50);
       }
     }
+    fresh = null;
   }
 
   function openSidebar(focusId, editFocus) {
@@ -329,7 +372,7 @@
     } else if (msg.type === "open-sidebar") openSidebar(msg.id);
     else if (msg.type === "scroll-to") {
       const m = document.querySelector(`mark.pn-mark[data-pn-id="${msg.id}"]`);
-      if (m) m.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (m) m.scrollIntoView({ behavior: still.matches ? "auto" : "smooth", block: "center" });
     }
     reply && reply({ ok: true });
   });

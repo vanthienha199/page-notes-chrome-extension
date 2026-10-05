@@ -23,7 +23,7 @@ async function renderSettings() {
   const box = $("swatches");
   box.innerHTML = "";
   for (const name of Object.keys(PN.COLORS)) {
-    const d = document.createElement("div");
+    const d = document.createElement("button");
     d.className = "sw" + (s.color === name ? " on" : "");
     d.innerHTML = `<i style="background:${PN.SWATCH[name]}"></i>${PN.LABEL[name]}`;
     d.onclick = () => saveSettings({ color: name });
@@ -37,6 +37,8 @@ async function renderNotes() {
     Math.max(...b.notes.map((n) => n.created)) - Math.max(...a.notes.map((n) => n.created)));
   $("tNotes").textContent = pages.reduce((a, p) => a + p.notes.length, 0);
   $("tPages").textContent = pages.length;
+  $("lNotes").textContent = $("tNotes").textContent === "1" ? "note" : "notes";
+  $("lPages").textContent = pages.length === 1 ? "page" : "pages";
   const sites = $("sites");
   sites.innerHTML = "";
   let shown = 0;
@@ -49,29 +51,38 @@ async function renderNotes() {
     const a = document.createElement("a");
     a.href = p.url; a.target = "_blank";
     a.textContent = hits[0].title || p.url;
-    const c = document.createElement("span");
-    c.className = "count"; c.textContent = `${hits.length} ${hits.length === 1 ? "note" : "notes"}`;
     const u = document.createElement("div");
-    u.className = "url"; u.textContent = p.url.replace(/^https?:\/\//, "");
-    div.append(a, c, u);
+    u.className = "url"; u.textContent = `${p.url.replace(/^https?:\/\//, "")}, ${hits.length} ${hits.length === 1 ? "note" : "notes"}`;
+    div.append(a, u);
+    let lastDay = "";
     for (const n of hits) {
       const w = document.createElement("div");
       w.className = "n";
+      const when = document.createElement("div");
+      when.className = "when";
+      const day = PN.day(n.created);
+      if (day !== lastDay) { const b = document.createElement("b"); b.textContent = day; when.appendChild(b); lastDay = day; }
+      when.append(PN.clock(n.created));
+      const body = document.createElement("div");
+      body.className = "body";
       const qq = document.createElement("div");
       qq.className = "quote";
-      qq.style.borderColor = PN.SWATCH[n.color] || PN.SWATCH.yellow;
+      const hl = document.createElement("span");
+      hl.className = "hl";
+      hl.style.background = PN.COLORS[n.color] || PN.COLORS.pink;
       const shown = n.display || n.quote;
-      qq.textContent = shown.length > 170 ? shown.slice(0, 170).trim() + "..." : shown;
-      w.appendChild(qq);
-      if (n.note) { const t = document.createElement("div"); t.className = "note"; t.textContent = n.note; w.appendChild(t); }
-      const m = document.createElement("div");
-      m.className = "meta"; m.textContent = PN.timeAgo(n.created);
-      w.appendChild(m);
+      hl.textContent = shown.length > 170 ? shown.slice(0, 170).trim() + "..." : shown;
+      qq.appendChild(hl);
+      body.appendChild(qq);
+      if (n.note) { const t = document.createElement("div"); t.className = "note"; t.textContent = n.note; body.appendChild(t); }
+      w.append(when, body);
       div.appendChild(w);
     }
     sites.appendChild(div);
   }
-  if (!shown) sites.innerHTML = `<div class="empty">${q ? "No notes match that search." : "No notes yet. Select text on any page to start."}</div>`;
+  if (!shown) sites.innerHTML = q
+    ? `<div class="empty"><h3>Nothing matches that search</h3>Try one word from the highlight or the note.</div>`
+    : `<div class="empty"><h3>No notes yet</h3>Select text on any web page and choose Highlight or Add note. Everything you save shows up here.</div>`;
 }
 
 $("tooltip").onchange = (e) => saveSettings({ showTooltip: e.target.checked });

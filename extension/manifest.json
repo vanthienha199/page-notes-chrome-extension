@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Page Notes (Sample)",
-  "version": "1.1.0",
-  "description": "Highlight text on any web page, attach a note, and find it again next visit. Sample build.",
+  "name": "Page Notes",
+  "version": "1.2.0",
+  "description": "Highlight text on any web page, attach a note, and find it again next visit.",
   "permissions": [
     "storage",
     "contextMenus",

@@ -15,7 +15,7 @@ const EMPTY = "https://standardebooks.org/ebooks/marcus-aurelius/meditations/geo
 fs.mkdirSync(RAW, { recursive: true });
 
 const NOTES = [
-  { p: 0, note: "Open the Monday newsletter with this line.", color: "yellow" },
+  { p: 0, note: "Open the Monday newsletter with this line.", color: "pink" },
   { p: 2, note: "Pairs well with the simplicity chapter in our guide.", color: "green" },
   { p: 5, note: "Pull quote for the landing page.", color: "blue" }
 ];
@@ -58,7 +58,7 @@ async function selectInParagraph(page, i) {
 
 async function addNote(page, sw, n) {
   await sw.evaluate((c) => chrome.storage.sync.get("settings").then((s) =>
-    chrome.storage.sync.set({ settings: Object.assign({ theme: "dark", showTooltip: true }, s.settings, { color: c }) })), n.color);
+    chrome.storage.sync.set({ settings: Object.assign({ theme: "system", showTooltip: true }, s.settings, { color: c }) })), n.color);
   await page.waitForTimeout(200);
   await selectInParagraph(page, n.p);
   await page.waitForTimeout(150);
@@ -75,14 +75,14 @@ const anchor = (page) => page.evaluate(() => { const h = document.querySelector(
 (async () => {
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), "pn-"));
   const ctx = await chromium.launchPersistentContext(profile, {
-    channel: "chromium", headless: true, colorScheme: "dark",
+    channel: "chromium", headless: true, colorScheme: "light",
     viewport: { width: 1280, height: 769 }, deviceScaleFactor: 2,
     args: [`--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`]
   });
   let [sw] = ctx.serviceWorkers();
   if (!sw) sw = await ctx.waitForEvent("serviceworker");
   const extId = sw.url().split("/")[2];
-  await sw.evaluate(() => chrome.storage.sync.set({ settings: { theme: "dark", showTooltip: true, color: "yellow" } }));
+  await sw.evaluate(() => chrome.storage.sync.set({ settings: { theme: "system", showTooltip: true, color: "pink" } }));
 
   const page = await ctx.newPage();
   await page.goto(PAGE, { waitUntil: "networkidle" });
@@ -94,6 +94,8 @@ const anchor = (page) => page.evaluate(() => { const h = document.querySelector(
   await page.screenshot({ path: path.join(RAW, "before.png") });
 
   for (const n of NOTES) await addNote(page, sw, n);
+  const fill = await page.evaluate(() => getComputedStyle(document.querySelector("mark.pn-mark")).backgroundImage);
+  check("highlight fill is drawn so it can sweep in", fill.startsWith("linear-gradient"), fill.slice(0, 40));
   await page.locator('#pn-host [data-act="close"]').click();
   check("three highlights on the page", (await marks(page)) === 3);
   check("three notes in storage", (await stored(sw, PAGE)) === 3);
@@ -108,6 +110,9 @@ const anchor = (page) => page.evaluate(() => { const h = document.querySelector(
   await page.reload({ waitUntil: "networkidle" });
   await page.waitForSelector("mark.pn-mark", { timeout: 15000 });
   check("highlights restored after reload", (await marks(page)) === 3);
+  await anchor(page);
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: path.join(RAW, "after.png") });
   const noteText = await page.locator("mark.pn-mark").first().getAttribute("title");
   check("note text kept on the highlight", noteText === NOTES[0].note, noteText || "");
 
@@ -123,13 +128,13 @@ const anchor = (page) => page.evaluate(() => { const h = document.querySelector(
   await page.locator('#pn-host [data-act="close"]').click();
   check("re-adding works", (await marks(page)) === 3);
 
-  // captures on the main page, dark theme
+  // captures on the main page, light theme (follows the system)
   await anchor(page);
   await page.waitForTimeout(500);
-  await page.screenshot({ path: path.join(RAW, "after.png") });
+  await page.screenshot({ path: path.join(RAW, "page_notes.png") });
   await page.locator("mark.pn-mark").first().click();
   await page.waitForTimeout(700);
-  await page.screenshot({ path: path.join(RAW, "sidebar_dark.png") });
+  await page.screenshot({ path: path.join(RAW, "sidebar_light.png") });
   // hero capture: sidebar docked left so it sits in the readable part of the gallery frame
   await sw.evaluate(() => chrome.storage.sync.get("settings").then((s) => chrome.storage.sync.set({ settings: Object.assign({}, s.settings, { side: "left" }) })));
   await page.setViewportSize({ width: 1120, height: 790 });
@@ -137,7 +142,7 @@ const anchor = (page) => page.evaluate(() => { const h = document.querySelector(
   check("sidebar can dock left", await page.evaluate(() => document.getElementById("pn-host").shadowRoot.querySelector(".side").classList.contains("left")));
   await page.evaluate(() => { const m = document.querySelector("mark.pn-mark"); m.scrollIntoView({ block: "start" }); window.scrollBy(0, -150); });
   await page.waitForTimeout(400);
-  await page.screenshot({ path: path.join(RAW, "hero_dark.png") });
+  await page.screenshot({ path: path.join(RAW, "sidebar_left.png") });
   await sw.evaluate(() => chrome.storage.sync.get("settings").then((s) => chrome.storage.sync.set({ settings: Object.assign({}, s.settings, { side: "right" }) })));
   await page.setViewportSize({ width: 1280, height: 769 });
   await page.waitForTimeout(400);
@@ -145,11 +150,11 @@ const anchor = (page) => page.evaluate(() => { const h = document.querySelector(
 
   // popup, rendered for this tab
   const pop = await ctx.newPage();
-  await pop.setViewportSize({ width: 368, height: 640 });
+  await pop.setViewportSize({ width: 360, height: 640 });
   await pop.goto(`chrome-extension://${extId}/popup.html?tabId=${tabId}`);
   await pop.waitForTimeout(700);
   check("popup lists the page notes", (await pop.locator(".item").count()) === 3);
-  await pop.locator("body").screenshot({ path: path.join(RAW, "popup_dark.png") });
+  await pop.locator("body").screenshot({ path: path.join(RAW, "popup_light.png") });
 
   // a second page with notes, and an empty page for the empty state
   const p2 = await ctx.newPage();
@@ -168,6 +173,21 @@ const anchor = (page) => page.evaluate(() => { const h = document.querySelector(
     for (const t of await chrome.tabs.query({})) { try { const r = await chrome.tabs.sendMessage(t.id, { type: "info" }); if (r.count === 0) ids.push(t.id); } catch (e) {} }
     return ids[0];
   });
+  const pe = await ctx.newPage();
+  await pe.setViewportSize({ width: 360, height: 640 });
+  await pe.goto(`chrome-extension://${extId}/popup.html?tabId=${p3Id}`);
+  await pe.waitForTimeout(700);
+  check("popup shows the empty state", (await pe.locator(".empty h2").textContent()) === "No notes on this page yet");
+  await pe.locator("body").screenshot({ path: path.join(RAW, "popup_empty.png") });
+  const optTab = await ctx.newPage();
+  await optTab.goto(`chrome-extension://${extId}/options.html`);
+  await optTab.waitForTimeout(300);
+  const optId = await optTab.evaluate(() => chrome.tabs.getCurrent().then((t) => t.id));
+  await pe.goto(`chrome-extension://${extId}/popup.html?tabId=${optId}`);
+  await pe.waitForTimeout(700);
+  check("popup explains pages it cannot use", (await pe.locator(".empty h2").textContent()) === "Notes work on regular web pages");
+  await pe.locator("body").screenshot({ path: path.join(RAW, "popup_error.png") });
+  await pe.close(); await optTab.close();
   await sw.evaluate((id) => chrome.tabs.sendMessage(id, { type: "toggle-sidebar" }), p3Id);
   await p3.waitForTimeout(700);
   await p3.screenshot({ path: path.join(RAW, "sidebar_empty.png") });
@@ -179,20 +199,20 @@ const anchor = (page) => page.evaluate(() => { const h = document.querySelector(
   await opt.waitForTimeout(1500);
   const totals = await opt.locator("#tNotes").textContent();
   check("options page counts all notes", totals === "5", `shows ${totals}`);
-  await opt.screenshot({ path: path.join(RAW, "options_dark.png") });
-  await opt.locator('#theme button[data-v="light"]').click();
-  await opt.waitForTimeout(1500);
   await opt.screenshot({ path: path.join(RAW, "options_light.png") });
+  await opt.locator('#theme button[data-v="dark"]').click();
+  await opt.waitForTimeout(1500);
+  check("dark theme applies", (await opt.evaluate(() => document.documentElement.dataset.theme)) === "dark");
+  await opt.screenshot({ path: path.join(RAW, "options_dark.png") });
 
-  // light theme versions of the popup and page
+  // dark versions of the popup and the page sidebar
   await pop.reload();
   await pop.waitForTimeout(600);
-  await pop.locator("body").screenshot({ path: path.join(RAW, "popup_light.png") });
-  await page.bringToFront();
+  await pop.locator("body").screenshot({ path: path.join(RAW, "popup_dark.png") });
   await page.waitForTimeout(400);
   await page.locator("mark.pn-mark").first().click();
   await page.waitForTimeout(700);
-  await page.screenshot({ path: path.join(RAW, "sidebar_light.png") });
+  await page.screenshot({ path: path.join(RAW, "sidebar_dark.png") });
 
   await ctx.close();
   console.log(failures ? `${failures} check(s) failed` : "all checks passed");

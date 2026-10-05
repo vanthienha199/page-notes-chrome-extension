@@ -1,70 +1,37 @@
 {
   "out": ".",
-  "hero": {
-    "headline": "Custom Chrome\nextensions",
-    "accent": "Chrome",
-    "stack": "Manifest V3 \u00b7 JavaScript \u00b7 Playwright tests",
-    "chips": [
-      "Popup and options page",
-      "Works on any website",
-      "Store-ready zip"
-    ],
-    "shot": "raw/hero_dark.png",
-    "url": "reader.demo/meditations/book-1",
-    "shotPosition": "left top"
+  "theme": {
+    "canvas": "#FFFDF7",
+    "surface": "#FFFFFF",
+    "ink": "#1C1B18",
+    "accent": "#1C1B18",
+    "display": { "family": "Young Serif", "weight": 400, "weights": [400] },
+    "body": { "family": "Figtree", "weights": [400, 600] }
+  },
+  "cover": {
+    "layout": "C",
+    "headline": "Notes that stay put",
+    "proof": "Highlights come back on every visit, 16 of 16 checks pass",
+    "shot": "raw/hero_scene.png",
+    "shotPosition": "right center"
   },
   "deliverables": {
-    "title": "Built into your browser",
-    "accent": "your browser",
-    "subtitle": "Source on GitHub \u00b7 zipped build \u00b7 end-to-end tests",
+    "title": "Popup, settings and a zip",
+    "subtitle": "Everything a buyer installs, in light and dark, ready for the Chrome Web Store.",
     "tiles": [
-      {
-        "label": "In-page sidebar",
-        "img": "raw/sidebar_light.png",
-        "pos": "right top"
-      },
-      {
-        "label": "Settings page",
-        "img": "raw/options_light.png",
-        "pos": "center top"
-      },
-      {
-        "label": "Toolbar popup",
-        "img": "raw/popup_light.png",
-        "pos": "center top"
-      },
-      {
-        "label": "Automated tests",
-        "img": "raw/tests_light.png",
-        "pos": "left top"
-      }
+      { "label": "The popup on a page with notes", "img": "raw/popup_light.png", "pos": "left 30%" },
+      { "label": "Settings and every saved note", "img": "raw/options_light.png", "pos": "left top" },
+      { "label": "A page with no notes yet", "img": "raw/popup_empty.png", "pos": "left 62%" },
+      { "label": "Loaded from the store zip", "img": "raw/store_zip.png", "pos": "left top" }
     ]
   },
-  "process": {
-    "title": "From idea to Web Store",
-    "accent": "Web Store",
-    "subtitle": "Minimal permissions, tested in a real browser",
-    "steps": [
-      {
-        "day": "Day 1",
-        "title": "Scope and permissions",
-        "text": "What the extension does, and the fewest permissions it needs."
-      },
-      {
-        "day": "Day 2",
-        "title": "Build the core",
-        "text": "Content script, background worker and storage."
-      },
-      {
-        "day": "Day 3",
-        "title": "Popup and settings",
-        "text": "Toolbar popup, options page, dark and light themes."
-      },
-      {
-        "day": "Day 4",
-        "title": "Test and package",
-        "text": "Browser tests, a zipped build and a store listing guide."
-      }
-    ]
+  "proof": {
+    "title": "Close the tab, come back",
+    "subtitle": "The same public domain page before any notes, and after a reload with every highlight restored.",
+    "compare": [
+      { "img": "raw/before.png", "label": "First visit", "note": "A plain page from standardebooks.org." },
+      { "img": "raw/after.png", "label": "Next visit", "note": "Three highlights found again by their quoted text." }
+    ],
+    "stat": { "value": "16 of 16", "label": "browser checks pass" }
   }
 }
